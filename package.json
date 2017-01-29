@@ -1,0 +1,27 @@
+{
+    "name": "vehicle-service",
+    "description": "vehicle-service",
+    "version": "0.0.0",
+    "author": {
+        "name": "serandives",
+        "email": "serandives@gmail.com"
+    },
+    "dependencies": {
+        "async": "1.*",
+        "knox": "0.*",
+        "knox-mpu": "0.*",
+        "node-uuid": "1.*",
+        "express": "4.*",
+        "sharp": "0.16.0",
+        "logger": "serandules/logger#master",
+        "utils": "serandules/utils#master",
+        "vehicle": "serandules/vehicle#master",
+        "mongutils": "serandules/mongutils#master",
+        "formida": "serandules/formida#master",
+        "hub-agent": "serandules/hub-agent#master"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/serandules/vehicle-service.git"
+    }
+}
