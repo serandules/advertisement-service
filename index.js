@@ -31,8 +31,8 @@ var bucket = 'autos.serandives.com';
 
 var s3Client = knox.createClient({
     secure: false,
-    key: nconf.get('AWS_KEY'),
-    secret: nconf.get('AWS_SECRET'),
+    key: nconf.get('awsKey'),
+    secret: nconf.get('awsSecret'),
     bucket: bucket
 });
 
