@@ -41,9 +41,8 @@ var cleanUploads = function (success, failed) {
 };
 
 var create = function (err, data, success, failed, req, res) {
-    log.debug('add callback');
     if (err) {
-        log.error(err);
+        log.error('advertisements:pre-create', err);
         cleanUploads(success, failed);
         res.status(500).send([{
             code: 500,
@@ -61,7 +60,7 @@ var create = function (err, data, success, failed, req, res) {
     data.photos = photos;
     Advertisement.create(data, function (err, advertisement) {
         if (err) {
-            log.error(err);
+            log.error('advertisements:create', err);
             res.status(500).send([{
                 code: 500,
                 message: 'Internal Server Error'
@@ -83,20 +82,19 @@ var upload = function (name, stream, done) {
         stream: stream
     });
     upload.on('initiated', function () {
-        log.debug('mpu initiated');
+
     });
     upload.on('uploading', function () {
-        log.debug('mpu uploading');
+
     });
     upload.on('uploaded', function () {
-        log.debug('mpu uploaded');
+
     });
     upload.on('error', function (err) {
-        log.debug('mpu error');
+        log.error('upload:errored', 'name:%s', name, err);
         done(err);
     });
     upload.on('completed', function (body) {
-        log.debug('mpu complete');
         done(false, name);
     });
 };
@@ -108,8 +106,7 @@ var save800x450 = function (id, part, done) {
         .crop(sharp.gravity.center)
         .jpeg()
         .on('error', function (err) {
-            log.debug(err);
-            console.log(err);
+            log.error('images:crop', 'id:%s', id, err);
             done(err);
         });
     upload(name, part.pipe(transformer), done);
@@ -122,8 +119,7 @@ var save288x162 = function (id, part, done) {
         .crop(sharp.gravity.center)
         .jpeg()
         .on('error', function (err) {
-            log.debug(err);
-            console.log(err);
+            log.error('images:crop', 'id:%s', id, err);
             done(err);
         });
     upload(name, part.pipe(transformer), done);
@@ -131,9 +127,8 @@ var save288x162 = function (id, part, done) {
 
 var update = function (old) {
     return function (err, data, success, failed, req, res) {
-        log.debug('update callback');
         if (err) {
-            log.error(err);
+            log.error('advertisements:pre-update', err);
             res.status(500).send([{
                 code: 500,
                 message: 'Internal Server Error'
@@ -155,7 +150,7 @@ var update = function (old) {
             _id: id
         }, data, function (err, advertisement) {
             if (err) {
-                log.error(err);
+                log.error('advertisements:update', err);
                 res.status(500).send([{
                     code: 500,
                     message: 'Internal Server Error'
@@ -172,7 +167,9 @@ var update = function (old) {
             }
             //deleting obsolete photos
             s3Client.deleteFile(photo, function (err, res) {
-                log.debug('file:%s is deleted', photo);
+                if (err) {
+                  log.error('photos:remove', 'path:%s', photo, err);
+                }
             });
         });
     };
@@ -192,18 +189,15 @@ var process = function (req, res, done) {
     };
     var form = new formida.IncomingForm();
     form.on('progress', function (rec, exp) {
-        log.debug('received >>> %s', rec);
-        log.debug('expected >>> %s', exp);
+
     });
     form.on('field', function (name, value) {
         if (name !== 'data') {
             return;
         }
-        log.debug('%s %s', name, value);
         data = JSON.parse(value);
     });
     form.on('file', function (part) {
-        log.debug('file field');
         queue++;
         var id = uuid.v4();
         save800x450(id, part, function (err, name) {
@@ -221,15 +215,13 @@ var process = function (req, res, done) {
         });
     });
     form.on('error', function (err) {
-        log.debug(err);
+        log.error('forms:errored', 'data:%j', data, err);
         done(err, data, success, failed, req, res);
     });
     form.on('aborted', function () {
-        log.debug('request was aborted');
         done(true, data, success, failed, req, res);
     });
     form.on('end', function () {
-        log.debug('form end');
         next();
     });
     form.parse(req);
@@ -256,7 +248,7 @@ router.get('/advertisements/:id', function (req, res) {
         _id: req.params.id
     }).exec(function (err, advertisement) {
         if (err) {
-            log.error(err);
+            log.error('advertisements:find-one', err);
             res.status(500).send([{
                 code: 500,
                 message: 'Internal Server Error'
@@ -301,7 +293,7 @@ router.put('/advertisements/:id', function (req, res) {
         _id: id
     }).exec(function (err, advertisement) {
         if (err) {
-            log.error(err);
+            log.error('advertisements:find-one', err);
             res.status(500).send([{
                 code: 500,
                 message: 'Internal Server Error'
@@ -333,7 +325,7 @@ router.get('/advertisements', function (req, res) {
         .sort(data.paging.sort)
         .exec(function (err, advertisements) {
             if (err) {
-                log.error(err);
+                log.error('advertisements:find', err);
                 res.status(500).send([{
                     code: 500,
                     message: 'Internal Server Error'
@@ -359,7 +351,7 @@ router.delete('/advertisements/:id', function (req, res) {
         _id: req.params.id
     }, function (err) {
         if (err) {
-            log.error(err);
+            log.error('advertisements:remove', err);
             res.status(500).send([{
                 code: 500,
                 message: 'Internal Server Error'
